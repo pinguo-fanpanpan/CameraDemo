@@ -7,8 +7,12 @@
 //
 
 #import "ViewController.h"
+#import "CaptureController.h"
 
 @interface ViewController ()
+
+//加载相机控制器
+- (void)loadCaptureController;
 
 @end
 
@@ -16,11 +20,18 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    NavigationController *nav = [[NavigationController alloc] init];
-    nav.navigationDelegate = self;
-    [self configureNotification:YES];
-    
-    [nav showCameraWithParentController:self];
+    self.view.backgroundColor = [UIColor whiteColor];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:YES];
+    [self loadCaptureController];
+}
+
+- (void)loadCaptureController
+{
+    CaptureController *capc = [[CaptureController alloc] init];
+    [self presentViewController:capc animated:NO completion:nil];
 }
 
 - (void)didReceiveMemoryWarning {

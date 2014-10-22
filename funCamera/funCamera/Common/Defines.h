@@ -26,11 +26,11 @@
 #define rgba_Color(r, g, b, a) [UIColor colorWithRed:r/255.0f green:g/255.0f blue:b/255.0f alpha:a]
 
 //frame and size
-#define SC_DEVICE_BOUNDS    [[UIScreen mainScreen] bounds]
-#define SC_DEVICE_SIZE      [[UIScreen mainScreen] bounds].size
+#define DEVICE_BOUNDS    [[UIScreen mainScreen] bounds]
+#define DEVICE_SIZE      [[UIScreen mainScreen] bounds].size
 
-#define SC_APP_FRAME        [[UIScreen mainScreen] applicationFrame]
-#define SC_APP_SIZE         [[UIScreen mainScreen] applicationFrame].size
+#define APP_FRAME        [[UIScreen mainScreen] applicationFrame]
+#define APP_SIZE         [[UIScreen mainScreen] applicationFrame].size
 
 #define SELF_CON_FRAME      self.view.frame
 #define SELF_CON_SIZE       self.view.frame.size
