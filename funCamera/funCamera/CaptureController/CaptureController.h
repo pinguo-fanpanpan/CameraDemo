@@ -10,7 +10,7 @@
 #import "CaptrueSessionManager.h"
 
 
-@interface CaptureController : UIViewController
+@interface CaptureController : UIViewController <CaptureSessionMangeger>
 
 @property (nonatomic,assign) CGRect previewRect;
 

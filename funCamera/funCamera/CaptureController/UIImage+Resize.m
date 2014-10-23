@@ -12,7 +12,8 @@
 // Returns a copy of this image that is cropped to the given bounds.
 // The bounds will be adjusted using CGRectIntegral.
 // This method ignores the image's imageOrientation setting.
-- (UIImage *)croppedImage:(CGRect)bounds {
+- (UIImage *)croppedImage:(CGRect)bounds
+{
     CGImageRef imageRef = CGImageCreateWithImageInRect([self CGImage], bounds);
     UIImage *croppedImage = [UIImage imageWithCGImage:imageRef];
     CGImageRelease(imageRef);
@@ -21,18 +22,22 @@
 
 // Returns a rescaled copy of the image, taking into account its orientation
 // The image will be scaled disproportionately if necessary to fit the bounds specified by the parameter
-- (UIImage *)resizedImage:(CGSize)newSize interpolationQuality:(CGInterpolationQuality)quality {
+- (UIImage *)resizedImage:(CGSize)newSize interpolationQuality:(CGInterpolationQuality)quality
+{
     BOOL drawTransposed;
     CGAffineTransform transform = CGAffineTransformIdentity;
     
     // In iOS 5 the image is already correctly rotated. See Eran Sandler's
     // addition here: http://eran.sandler.co.il/2011/11/07/uiimage-in-ios-5-orientation-and-resize/
     
-    if([[[UIDevice currentDevice]systemVersion]floatValue] >= 5.0) {
+    if([[[UIDevice currentDevice]systemVersion]floatValue] >= 5.0)
+    {
         drawTransposed = YES;
     }
-    else {
-        switch(self.imageOrientation) {
+    else
+    {
+        switch(self.imageOrientation)
+        {
             case UIImageOrientationLeft:
             case UIImageOrientationLeftMirrored:
             case UIImageOrientationRight:
@@ -52,12 +57,14 @@
 // Resizes the image according to the given content mode, taking into account the image's orientation
 - (UIImage *)resizedImageWithContentMode:(UIViewContentMode)contentMode
                                   bounds:(CGSize)bounds
-                    interpolationQuality:(CGInterpolationQuality)quality {
+                    interpolationQuality:(CGInterpolationQuality)quality
+{
     CGFloat horizontalRatio = bounds.width / self.size.width;
     CGFloat verticalRatio = bounds.height / self.size.height;
     CGFloat ratio;
     
-    switch(contentMode) {
+    switch(contentMode)
+    {
         case UIViewContentModeScaleAspectFill:
             ratio = MAX(horizontalRatio, verticalRatio);
             break;
@@ -67,7 +74,7 @@
             break;
             
         default:
-            [NSException raise:NSInvalidArgumentException format:@"Unsupported content mode: %ld", contentMode];
+            [NSException raise:NSInvalidArgumentException format:@"Unsupported content mode: %d", contentMode];
     }
     
     CGSize newSize = CGSizeMake(self.size.width * ratio, self.size.height * ratio);
@@ -77,7 +84,8 @@
 
 
 #pragma mark - fix orientation
-- (UIImage *)fixOrientation {
+- (UIImage *)fixOrientation
+{
     
     // No-op if the orientation is already correct
     if (self.imageOrientation == UIImageOrientationUp) return self;
@@ -86,7 +94,8 @@
     // We do it in 2 steps: Rotate if Left/Right/Down, and then flip if Mirrored.
     CGAffineTransform transform = CGAffineTransformIdentity;
     
-    switch (self.imageOrientation) {
+    switch (self.imageOrientation)
+    {
         case UIImageOrientationDown:
         case UIImageOrientationDownMirrored:
             transform = CGAffineTransformTranslate(transform, self.size.width, self.size.height);
@@ -109,7 +118,8 @@
             break;
     }
     
-    switch (self.imageOrientation) {
+    switch (self.imageOrientation)
+    {
         case UIImageOrientationUpMirrored:
         case UIImageOrientationDownMirrored:
             transform = CGAffineTransformTranslate(transform, self.size.width, 0);
@@ -135,7 +145,8 @@
                                              CGImageGetColorSpace(self.CGImage),
                                              CGImageGetBitmapInfo(self.CGImage));
     CGContextConcatCTM(ctx, transform);
-    switch (self.imageOrientation) {
+    switch (self.imageOrientation)
+    {
         case UIImageOrientationLeft:
         case UIImageOrientationLeftMirrored:
         case UIImageOrientationRight:
@@ -200,7 +211,8 @@ static inline CGFloat DegreesToRadians(CGFloat degrees)
 - (UIImage *)resizedImage:(CGSize)newSize
                 transform:(CGAffineTransform)transform
            drawTransposed:(BOOL)transpose
-     interpolationQuality:(CGInterpolationQuality)quality {
+     interpolationQuality:(CGInterpolationQuality)quality
+{
     CGRect newRect = CGRectIntegral(CGRectMake(0, 0, newSize.width, newSize.height));
     CGRect transposedRect = CGRectMake(0, 0, newRect.size.height, newRect.size.width);
     CGImageRef imageRef = self.CGImage;
@@ -237,10 +249,12 @@ static inline CGFloat DegreesToRadians(CGFloat degrees)
 }
 
 // Returns an affine transform that takes into account the image orientation when drawing a scaled image
-- (CGAffineTransform)transformForOrientation:(CGSize)newSize {
+- (CGAffineTransform)transformForOrientation:(CGSize)newSize
+{
     CGAffineTransform transform = CGAffineTransformIdentity;
     
-    switch(self.imageOrientation) {
+    switch(self.imageOrientation)
+    {
         case UIImageOrientationDown:           // EXIF = 3
         case UIImageOrientationDownMirrored:   // EXIF = 4
             transform = CGAffineTransformTranslate(transform, newSize.width, newSize.height);
@@ -262,7 +276,8 @@ static inline CGFloat DegreesToRadians(CGFloat degrees)
             break;
     }
     
-    switch(self.imageOrientation) {
+    switch(self.imageOrientation)
+    {
         case UIImageOrientationUpMirrored:     // EXIF = 2
         case UIImageOrientationDownMirrored:   // EXIF = 4
             transform = CGAffineTransformTranslate(transform, newSize.width, 0);

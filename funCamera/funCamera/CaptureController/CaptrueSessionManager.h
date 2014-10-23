@@ -41,10 +41,19 @@
 - (void)pinchCameraWithScaleNum:(CGFloat)scaleNum;
 
 //闪光灯配置
-- (void)swithFlashMode:(UIButton *)sender;
+- (void)switchFlashMode:(UIButton *)sender;
 
 //聚焦
 - (void)focusInPoint:(CGPoint)touchPoint;
+
+//分辨率
+- (void)changeResolutionRatioWithIndex:(NSInteger)index;
+
+//曝光率
+- (void)switchExposureModeWithIndex:(NSInteger)index;
+
+//白平衡
+- (void)switchWhiteBalanceWithIndex:(NSInteger)index;
 
 //拍照，将图片保存到相册
 - (void)saveImageToAlbum:(UIImage *)stillImage;
@@ -54,6 +63,6 @@
 @protocol CaptureSessionMangeger <NSObject>
 
 @optional
-
+- (void)setButtonImageWithImage:(UIImage *)image;
 
 @end

@@ -21,7 +21,8 @@
 //对焦
 #define ADJUSTING_FOCUS @"adjustingfocus"
 
-@interface CaptureController () {
+@interface CaptureController ()
+{
     CGPoint currTouchPoint;
 }
 
@@ -30,25 +31,35 @@
 @property (nonatomic,strong) UIView *topContainView;
 @property (nonatomic,strong) UIView *bottomContainView;
 @property (nonatomic,strong) NSMutableSet *cameraBtnSet;
+@property (nonatomic,strong) UIView *settingVeiw;
 
 //对焦图片
 @property (nonatomic,strong) UIImageView * focusImageView;
 
+//segment
+@property (nonatomic,strong) UISegmentedControl *segControl;
+
+
 //设置镜头拉升的slider
-@property (nonatomic,strong) UISlider *slider;
+@property (nonatomic,strong) Slider *slider;
 
 - (void)addTopContainView;
 - (void)addBottomContainView;
 - (void)addSliderView;
+- (void)addFocusImageView;
+
 - (void)buttonPressed:(UIButton *)sender;
+- (void)controlPressed:(UIButton *)sender;
 
 @end
 
 @implementation CaptureController
 
-- (instancetype)init {
+- (instancetype)init
+{
     self = [super init];
-    if (self) {
+    if (self)
+    {
         currTouchPoint = CGPointZero;
         _cameraBtnSet = [[NSMutableSet alloc] init];
     }
@@ -70,20 +81,22 @@
 {
     [super viewDidLoad];
     
-    self.view.backgroundColor = [UIColor whiteColor];
+    self.view.backgroundColor = BOTTOM_COLOR;
 //    [self.view setTranslatesAutoresizingMaskIntoConstraints:NO];
     
     //隐藏状态栏
     [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationFade];
     
     //配置相机预览框
-    if (CGRectEqualToRect(_previewRect, CGRectZero)) {
+    if (CGRectEqualToRect(_previewRect, CGRectZero))
+    {
         self.previewRect = CGRectMake(0, CAMERA_TOPVIEW_HEIGHT, DEVICE_SIZE.width, DEVICE_SIZE.height - CAMERA_TOPVIEW_HEIGHT - CAMERA_BOTTOMVIEW_HEIGHT);
         
     }
     
     //session manager
     CaptrueSessionManager *manager = [[CaptrueSessionManager alloc] init];
+    manager.delegate = self;
     [manager configureWithParentLayer:self.view preViewRect:_previewRect];
     self.sessionManager = manager;
     
@@ -91,6 +104,8 @@
     [self addTopContainView];
     [self addBottomContainView];
     [self addSliderView];
+    [self addFocusImageView];
+    [self addSettingVeiw];
     
     [_sessionManager.session startRunning];
 }
@@ -115,44 +130,8 @@
     [flashBtn addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
     flashBtn.tag = 22;
     [topView addSubview:flashBtn];
-//    [topView setTranslatesAutoresizingMaskIntoConstraints:NO];
-//    NSMutableArray *tmpConstrains = [NSMutableArray array];
-//    
-//    NSString *format = [NSString stringWithFormat:@"|-0-[topView(==%d)]",(NSInteger)DEVICE_SIZE.width];
-//    [tmpConstrains addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:format options:NSLayoutFormatDirectionLeadingToTrailing metrics:nil views:NSDictionaryOfVariableBindings(topView)]];
-//    
-//    NSString *vFormat = [NSString stringWithFormat:@"V:|-0-[topView(==%d)]",CAMERA_TOPVIEW_HEIGHT];
-//    [tmpConstrains addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:vFormat options:NSLayoutFormatDirectionLeadingToTrailing metrics:nil views:NSDictionaryOfVariableBindings(topView)]];
-//    
-//    [self.view addConstraints:tmpConstrains];
+    
     self.topContainView = topView;
-    
-    
-}
-
-- (void)addSliderView
-{
-    Slider *slider = [[Slider alloc] initWithFrame:CGRectMake(280, 146, 40, 200) direction:SCSliderDirectionVertical];
-    slider.backgroundColor = [UIColor clearColor];
-    slider.maxValue = 3.f;
-    slider.minValue = 1.f;
-    [slider buildDidChangeValueBlock:^(CGFloat value) {
-        [_sessionManager pinchCameraWithScaleNum:value];
-    }];
-    [self.view addSubview:slider];
-}
-
-- (void)buttonPressed:(UIButton *)sender
-{
-    NSInteger index = sender.tag - 20;
-    if (index == 1) {
-        [_sessionManager swithCamera:sender.selected];
-        sender.selected = !sender.selected;
-    }else if (index == 2) {
-        [_sessionManager swithFlashMode:sender];
-    }else if (index == 3) {
-        [_sessionManager saveImageToAlbum:nil];
-    }
 }
 
 - (void)addBottomContainView
@@ -167,22 +146,155 @@
     [shotBtn addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
     shotBtn.tag = 23;
     [bottomView addSubview:shotBtn];
-
-//    [bottomView setTranslatesAutoresizingMaskIntoConstraints:NO];
-//    NSMutableArray *tmpConstrains = [NSMutableArray array];
-//    
-//    NSString *format = [NSString stringWithFormat:@"|-0-[bottomView(==%d)]",(NSInteger)DEVICE_SIZE.width];
-//    [tmpConstrains addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:format options:NSLayoutFormatDirectionLeadingToTrailing metrics:nil views:NSDictionaryOfVariableBindings(bottomView)]];
-//    
-//    NSString *vFormat = [NSString stringWithFormat:@"V:|-%d-[bottomView(==%d)]",(NSInteger)DEVICE_SIZE.height - CAMERA_BOTTOMVIEW_HEIGHT,CAMERA_BOTTOMVIEW_HEIGHT];
-//    [tmpConstrains addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:vFormat options:NSLayoutFormatDirectionLeadingToTrailing metrics:nil views:NSDictionaryOfVariableBindings(bottomView)]];
-//    
-//    [self.view addConstraints:tmpConstrains];
     
+    UIButton *albumBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    albumBtn.frame = CGRectMake(35, 30, 50, 50);
+    albumBtn.backgroundColor = [UIColor clearColor];
+    albumBtn.imageView.contentMode = UIViewContentModeScaleAspectFill;
+    albumBtn.layer.borderWidth = 2;
+    albumBtn.layer.borderColor = [rgba_Color(147, 151, 156, 1.0) CGColor];
+    [albumBtn addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
+    albumBtn.tag = 24;
+    [bottomView addSubview:albumBtn];
+    
+    UIButton *setBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    setBtn.frame = CGRectMake(CGRectGetMaxX(shotBtn.frame) + 10, 15, 100, 100);
+    [setBtn setImage:[UIImage imageNamed:@"setting_service_agreement_01@2x.png"] forState:UIControlStateNormal];
+    [setBtn addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
+    setBtn.tag = 25;
+    [bottomView addSubview:setBtn];
     
     self.bottomContainView = bottomView;
 }
 
+- (void)addSliderView
+{
+    Slider *slider = [[Slider alloc] initWithFrame:CGRectMake(280, 146, 40, 200) direction:SCSliderDirectionVertical];
+    slider.backgroundColor = [UIColor clearColor];
+     [slider fillLineColor:[UIColor whiteColor] slidedLineColor:rgba_Color(120, 174, 0, 2.f) circleColor:[UIColor whiteColor] shouldShowHalf:YES lineWidth:1.f circleRadius:10.f isFullFillCircle:NO];
+    slider.maxValue = 3.f;
+    slider.minValue = 1.f;
+    [slider buildDidChangeValueBlock:^(CGFloat value) {
+        [_sessionManager pinchCameraWithScaleNum:value];
+    }];
+    [self.view addSubview:slider];
+    
+    self.slider = slider;
+}
+
+- (void)addFocusImageView
+{
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 44, 80, 80)];
+    imageView.alpha = 0;
+    imageView.image = [UIImage imageNamed:@"touch_focus_x@2x.png"];
+    [self.view addSubview:imageView];
+    
+    self.focusImageView = imageView;
+}
+
+- (void)addSettingVeiw
+{
+    UIView *setView = [[UIView alloc] initWithFrame:CGRectMake((DEVICE_SIZE.width - 240)/2 - 10, CGRectGetMinY(_bottomContainView.frame) - 250, 240, 240)];
+    setView.backgroundColor = [UIColor blackColor];
+    setView.alpha = .0f;
+    setView.layer.cornerRadius = 5;
+    [self.view addSubview:setView];
+    
+    self.settingVeiw = setView;
+    
+    NSArray *labText = @[@"分辨率:",@"曝    光:",@"白平衡:",@"帧    率:",@"I  S  O :"];
+    for (int i = 0; i < 5; i ++)
+    {
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(20, 30 + 40 * i, 70, 25)];
+        label.text = labText[i];
+        label.textColor = [UIColor whiteColor];
+        label.font = [UIFont systemFontOfSize:18];
+        [_settingVeiw addSubview:label];
+    }
+    
+    //分辨率
+    UISegmentedControl *segMentedControl = [[UISegmentedControl alloc] initWithItems:@[@"1 : 1",@"9 : 16",@"3 : 4"]];
+    segMentedControl.tintColor = [UIColor whiteColor];
+    segMentedControl.frame = CGRectMake(90, 30, 130, 25);
+    [segMentedControl addTarget:self action:@selector(controlPressed:) forControlEvents:UIControlEventValueChanged];
+    [_settingVeiw addSubview:segMentedControl];
+    
+    self.segControl = segMentedControl;
+    
+    //曝光率和白平衡
+    for (int i = 0; i < 4; i ++)
+    {
+        Slider *slider = [[Slider alloc] initWithFrame:CGRectMake(90, 70 + 40 * i, 135, 25) direction:SCSliderDirectionHorizonal] ;
+        [slider fillLineColor:[UIColor whiteColor] slidedLineColor:rgba_Color(120, 174, 0, 2.f) circleColor:[UIColor whiteColor] shouldShowHalf:YES lineWidth:1.f circleRadius:10.f isFullFillCircle:NO];
+        [_settingVeiw addSubview:slider];
+    }
+}
+
+- (void)buttonPressed:(UIButton *)sender
+{
+    NSInteger index = sender.tag - 20;
+    if (index == 1)
+    {
+        [_sessionManager swithCamera:sender.selected];
+        sender.selected = !sender.selected;
+    }else if (index == 2)
+    {
+        [_sessionManager switchFlashMode:sender];
+    }else if (index == 3)
+    {
+        [_sessionManager saveImageToAlbum:nil];
+    }else if (index == 5)
+    {
+        sender.selected = !sender.selected;
+        if (sender.selected)
+        {
+            _settingVeiw.alpha = .5f;
+        }else
+        {
+            _settingVeiw.alpha = .0f;
+        }
+    }
+}
+
+- (void)controlPressed:(UIButton *)sender
+{
+    NSInteger selIndex = _segControl.selectedSegmentIndex;
+    [_sessionManager changeResolutionRatioWithIndex:selIndex];
+}
 
 
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+    UITouch *touch = [touches anyObject];
+    currTouchPoint = [touch locationInView:self.view];
+    CGRect managerBounds = _sessionManager.previewLayer.bounds;
+    CGRect rect = CGRectMake(managerBounds.origin.x, managerBounds.origin.y + 44, managerBounds.size.width, managerBounds.size.height);
+    if (CGRectContainsPoint(rect, currTouchPoint) == NO)
+    {
+        return;
+    }
+    
+    //相机聚焦
+    [_sessionManager focusInPoint:currTouchPoint];
+    
+    if (_settingVeiw.alpha == .0f) {
+        [_focusImageView setCenter:currTouchPoint];
+        _focusImageView.alpha = 1.f;
+        [UIView animateWithDuration:1.f animations:^
+         {
+             _focusImageView.alpha = 0;
+         }];
+    }
+}
+
+- (void)setButtonImageWithImage:(UIImage *)image
+{
+    UIView *subView = [_bottomContainView viewWithTag:24];
+    if (![subView isKindOfClass:[UIButton class]])
+    {
+        return;
+    }
+    UIButton *button = (UIButton *)subView;
+    [button setImage:image forState:UIControlStateNormal];
+}
 @end

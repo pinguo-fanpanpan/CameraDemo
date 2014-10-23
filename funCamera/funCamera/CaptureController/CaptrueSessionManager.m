@@ -21,7 +21,8 @@
 - (instancetype)init
 {
     self = [super init];
-    if (self) {
+    if (self)
+    {
         _preScaleNum = 1.f;
         _scaleNum = 1.f;
     }
@@ -208,10 +209,11 @@
  *  （1.off  2.auto  3.on）
  *  @param sender 切换闪光灯的按钮
  */
-- (void)swithFlashMode:(UIButton *)sender
+- (void)switchFlashMode:(UIButton *)sender
 {
     Class deviceClass = NSClassFromString(@"AVCaptureDevice");
-    if (!deviceClass) {
+    if (!deviceClass)
+    {
         UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"温馨提示" message:@"此设备不支持拍照功能" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
         [alertView show];
         return;
@@ -220,8 +222,10 @@
     AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     [device lockForConfiguration:nil];
     //判断相机是否具有拍照功能
-    if ([device hasFlash]) {
-        if (device.flashMode == AVCaptureFlashModeOff) {
+    if ([device hasFlash])
+    {
+        if (device.flashMode == AVCaptureFlashModeOff)
+        {
             device.flashMode = AVCaptureFlashModeAuto;
             imageName = @"flashing_auto@2x.png";
         }else if (device.flashMode == AVCaptureFlashModeAuto)
@@ -233,10 +237,12 @@
             device.flashMode = AVCaptureFlashModeOff;
             imageName = @"flashing_off@2x.png";
         }
-        if (sender) {
+        if (sender)
+        {
             [sender setBackgroundImage:[UIImage imageNamed:imageName] forState:UIControlStateNormal];
         }
-    }else {
+    }else
+    {
         UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"温馨提示" message:@"此设备不具备闪光功能" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
         [alertView show];
     }
@@ -250,9 +256,127 @@
  */
 - (void)focusInPoint:(CGPoint)touchPoint
 {
-    
+    CGPoint focusPoint = [self convertToPointOfInterestFromViewCoordinates:touchPoint];
+    [self focusWithMode:AVCaptureFocusModeAutoFocus exposeWithMode:AVCaptureExposureModeContinuousAutoExposure atDevicePoint:focusPoint monitorSubjectAreaChange:YES];
 }
 
+/**
+ *  外部的point转换为camera需要的point(外部point/相机页面的frame)
+ *
+ *  @param viewCoordinates 外部的point
+ *
+ *  @return 相对位置的point
+ */
+- (CGPoint)convertToPointOfInterestFromViewCoordinates:(CGPoint)viewCoordinates {
+    CGPoint pointOfInterest = CGPointMake(.5f, .5f);
+    CGSize frameSize = _previewLayer.bounds.size;
+    
+    AVCaptureVideoPreviewLayer *videoPreviewLayer = self.previewLayer;
+    
+    if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResize]) {
+        pointOfInterest = CGPointMake(viewCoordinates.y / frameSize.height, 1.f - (viewCoordinates.x / frameSize.width));
+    } else {
+        CGRect cleanAperture;
+        for(AVCaptureInputPort *port in [[self.session.inputs lastObject]ports]) {
+            if([port mediaType] == AVMediaTypeVideo) {
+                cleanAperture = CMVideoFormatDescriptionGetCleanAperture([port formatDescription], YES);
+                CGSize apertureSize = cleanAperture.size;
+                CGPoint point = viewCoordinates;
+                
+                CGFloat apertureRatio = apertureSize.height / apertureSize.width;
+                CGFloat viewRatio = frameSize.width / frameSize.height;
+                CGFloat xc = .5f;
+                CGFloat yc = .5f;
+                
+                if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResizeAspect]) {
+                    if(viewRatio > apertureRatio) {
+                        CGFloat y2 = frameSize.height;
+                        CGFloat x2 = frameSize.height * apertureRatio;
+                        CGFloat x1 = frameSize.width;
+                        CGFloat blackBar = (x1 - x2) / 2;
+                        if(point.x >= blackBar && point.x <= blackBar + x2) {
+                            xc = point.y / y2;
+                            yc = 1.f - ((point.x - blackBar) / x2);
+                        }
+                    } else {
+                        CGFloat y2 = frameSize.width / apertureRatio;
+                        CGFloat y1 = frameSize.height;
+                        CGFloat x2 = frameSize.width;
+                        CGFloat blackBar = (y1 - y2) / 2;
+                        if(point.y >= blackBar && point.y <= blackBar + y2) {
+                            xc = ((point.y - blackBar) / y2);
+                            yc = 1.f - (point.x / x2);
+                        }
+                    }
+                } else if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResizeAspectFill]) {
+                    if(viewRatio > apertureRatio) {
+                        CGFloat y2 = apertureSize.width * (frameSize.width / apertureSize.height);
+                        xc = (point.y + ((y2 - frameSize.height) / 2.f)) / y2;
+                        yc = (frameSize.width - point.x) / frameSize.width;
+                    } else {
+                        CGFloat x2 = apertureSize.height * (frameSize.height / apertureSize.width);
+                        yc = 1.f - ((point.x + ((x2 - frameSize.width) / 2)) / x2);
+                        xc = point.y / frameSize.height;
+                    }
+                    
+                }
+                
+                pointOfInterest = CGPointMake(xc, yc);
+                break;
+            }
+        }
+    }
+    
+    return pointOfInterest;
+}
+
+- (void)focusWithMode:(AVCaptureFocusMode)focusMode exposeWithMode:(AVCaptureExposureMode)exposureMode atDevicePoint:(CGPoint)point monitorSubjectAreaChange:(BOOL)monitorSubjectAreaChange {
+    
+//    dispatch_async(_sessionQueue, ^{
+        AVCaptureDevice *device = [_inputDevice device];
+        NSError *error = nil;
+        if ([device lockForConfiguration:&error])
+        {
+            if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:focusMode])
+            {
+                [device setFocusMode:focusMode];
+                [device setFocusPointOfInterest:point];
+            }
+            if ([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:exposureMode])
+            {
+                [device setExposureMode:exposureMode];
+                [device setExposurePointOfInterest:point];
+            }
+            [device setSubjectAreaChangeMonitoringEnabled:monitorSubjectAreaChange];
+            [device unlockForConfiguration];
+        }
+        else
+        {
+            NSLog(@"%@", error);
+        }
+//    });
+}
+
+/**
+ *  改变屏幕分辨率
+ *
+ *  @param index 分辨率选择的下标
+ */
+- (void)changeResolutionRatioWithIndex:(NSInteger)index
+{
+    CGRect rect = _previewLayer.bounds;
+    if (index == 0)
+    {
+        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, 320);
+    }else if (index == 1)
+    {
+        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, 340);
+    }else
+    {
+        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, 414);
+    }
+    
+}
 /**
  *  保存照片到相册
  *
@@ -261,12 +385,15 @@
 - (void)saveImageToAlbum:(UIImage *)stillImage
 {
     AVCaptureConnection *connection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-    if (!connection) {
+    if (!connection)
+    {
         NSLog(@"take photo faild");
         return;
     }
-    [_stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
-        if (imageDataSampleBuffer == NULL) {
+    [_stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error)
+    {
+        if (imageDataSampleBuffer == NULL)
+        {
             return;
         }
         NSData * imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
@@ -277,11 +404,13 @@
 
 - (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo
 {
-    if (error != NULL) {
+    if (error != NULL)
+    {
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"出错了!" message:@"存不了T_T" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles:nil, nil];
         [alert show];
-    } else {
-        NSLog(@"保存成功");
+    } else
+    {
+        [self.delegate setButtonImageWithImage:image];
     }
 }
 

@@ -18,12 +18,14 @@
 
 @implementation ViewController
 
-- (void)viewDidLoad {
+- (void)viewDidLoad
+{
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
+- (void)viewDidAppear:(BOOL)animated
+{
     [super viewDidAppear:YES];
     [self loadCaptureController];
 }
@@ -34,19 +36,23 @@
     [self presentViewController:capc animated:NO completion:nil];
 }
 
-- (void)didReceiveMemoryWarning {
+- (void)didReceiveMemoryWarning
+{
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
 
-- (void)configureNotification:(BOOL)toAdd {
+- (void)configureNotification:(BOOL)toAdd
+{
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"notificationTakePicture" object:nil];
-    if (toAdd) {
+    if (toAdd)
+    {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(callbackNotificationForFilter:) name:@"notificationTakePicture" object:nil];
     }
 }
 
-- (void)callbackNotificationForFilter:(NSNotification*)noti {
+- (void)callbackNotificationForFilter:(NSNotification*)noti
+{
 //    UIViewController *cameraCon = noti.object;
 //    if (!cameraCon) {
 //        return;

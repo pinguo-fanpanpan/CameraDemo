@@ -19,7 +19,8 @@
 //#define GAP                             (SHOW_HALF_WHEN_CIRCLE_IS_TOP ? CIRCLE_RADIUS : 0)
 //#define INVERSE_GAP                     (SHOW_HALF_WHEN_CIRCLE_IS_TOP ? 0 : CIRCLE_RADIUS)
 
-@interface Slider () {
+@interface Slider ()
+{
     CGFloat gap;
     CGFloat inverseGap;
 }
@@ -50,9 +51,11 @@
  *
  *  @return SCSlider
  */
-- (id)initWithFrame:(CGRect)frame direction:(SCSliderDirection)direction {
+- (id)initWithFrame:(CGRect)frame direction:(SCSliderDirection)direction
+{
     self = [super initWithFrame:frame];
-    if (self) {
+    if (self)
+    {
         self.backgroundColor = [UIColor clearColor];
         self.minValue = 0;
         self.maxValue = 1;
@@ -87,15 +90,19 @@
        shouldShowHalf:(BOOL)shouldShowHalf
             lineWidth:(CGFloat)lineWidth
          circleRadius:(CGFloat)circleRadius
-     isFullFillCircle:(BOOL)isFullFillCircle {
+     isFullFillCircle:(BOOL)isFullFillCircle
+{
     
-    if (bgLineColor) {
+    if (bgLineColor)
+    {
         self.bgLineColor = bgLineColor;
     }
-    if (slidedLineColor) {
+    if (slidedLineColor)
+    {
         self.slidedLineColor = slidedLineColor;
     }
-    if (circleColor) {
+    if (circleColor)
+    {
         self.circleColor = circleColor;
     }
     self.showHalfWhenCirlceIsTop = shouldShowHalf;
@@ -110,7 +117,8 @@
  *
  *  @param value          value值
  */
-- (void)setValue:(CGFloat)value {
+- (void)setValue:(CGFloat)value
+{
     [self setValue:value shouldCallBack:YES];
 }
 
@@ -120,27 +128,35 @@
  *  @param value          value值
  *  @param shouldCallBack 是否调用回调函数
  */
-- (void)setValue:(CGFloat)value shouldCallBack:(BOOL)shouldCallBack {
-    if (value != _value) {
-        if (value < _minValue) {
+- (void)setValue:(CGFloat)value shouldCallBack:(BOOL)shouldCallBack
+{
+    if (value != _value)
+    {
+        if (value < _minValue)
+        {
             _value = _minValue;
             return;
-        } else if (value > _maxValue) {
+        } else if (value > _maxValue)
+        {
             _value = _maxValue;
             return;
         }
         _value = value;
         
-        if (!shouldCallBack) {
+        if (!shouldCallBack)
+        {
             _scaleNum = (_value - _minValue) / (_maxValue - _minValue);
         }
         
         [self setNeedsDisplay];
         
-        if (shouldCallBack) {
-            if (_didChangeValueBlock) {
+        if (shouldCallBack)
+        {
+            if (_didChangeValueBlock)
+            {
                 _didChangeValueBlock(value);
-            } else if ([self.delegate respondsToSelector:@selector(didChangeValueSCSlider:value:)]) {
+            } else if ([self.delegate respondsToSelector:@selector(didChangeValueSCSlider:value:)])
+            {
                 [self.delegate didChangeValueSCSlider:self value:value];
             }
         }
@@ -152,8 +168,10 @@
  *
  *  @param didChangeValueBlock value改变的回调block
  */
-- (void)buildDidChangeValueBlock:(DidChangeValueBlock)didChangeValueBlock {
-    if (_didChangeValueBlock != didChangeValueBlock) {
+- (void)buildDidChangeValueBlock:(DidChangeValueBlock)didChangeValueBlock
+{
+    if (_didChangeValueBlock != didChangeValueBlock)
+    {
         self.didChangeValueBlock = didChangeValueBlock;
     }
 }
@@ -163,14 +181,17 @@
  *
  *  @param touchEndBlock 滑动结束后的回调block
  */
-- (void)buildTouchEndBlock:(TouchEndBlock)touchEndBlock {
-    if (_touchEndBlock != touchEndBlock) {
+- (void)buildTouchEndBlock:(TouchEndBlock)touchEndBlock
+{
+    if (_touchEndBlock != touchEndBlock)
+    {
         self.touchEndBlock = touchEndBlock;
     }
 }
 
 #pragma mark -----------drawRect--------------
-- (void)drawRect:(CGRect)rect {
+- (void)drawRect:(CGRect)rect
+{
     gap = (_showHalfWhenCirlceIsTop ? _circleRadius : 0);
     inverseGap = (_showHalfWhenCirlceIsTop ? 0 : _circleRadius);
     
@@ -204,9 +225,11 @@
     CGFloat penWidth = 1.f;
     CGContextSetStrokeColorWithColor(context, _circleColor.CGColor);//画笔颜色
     CGContextSetLineWidth(context, penWidth);//线的宽度
-    if (_isFullFillCircle) {
+    if (_isFullFillCircle)
+    {
         CGContextSetFillColorWithColor(context, _circleColor.CGColor);//填充颜色
-    } else {
+    } else
+    {
         CGContextSetFillColorWithColor(context, [UIColor clearColor].CGColor);//填充颜色
     }
     CGContextSetShadow(context, CGSizeMake(1, 1), 1.f);//阴影
@@ -216,7 +239,8 @@
     CGContextDrawPath(context, kCGPathFillStroke); //绘制路径加填充
     
     //内层圆
-    if (!_isFullFillCircle) {
+    if (!_isFullFillCircle)
+    {
         CGContextSetStrokeColorWithColor(context, nil);//画笔颜色
         CGContextSetLineWidth(context, 0);//线的宽度
         CGContextSetFillColorWithColor(context, _circleColor.CGColor);//填充颜色
@@ -229,22 +253,26 @@
 }
 
 #pragma mark ---------touch-----------
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
     [self updateTouchPoint:touches];
     [self callbackTouchEnd:NO];
 }
 
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
     [self updateTouchPoint:touches];
     [self callbackTouchEnd:NO];
 }
 
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
     [self updateTouchPoint:touches];
     [self callbackTouchEnd:YES];
 }
 
-- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
+{
     [self updateTouchPoint:touches];
     [self callbackTouchEnd:YES];
 }
@@ -253,11 +281,14 @@
 /**
  *  滑动结束，调用回调函数
  */
-- (void)callbackTouchEnd:(BOOL)isTouchEnd {
+- (void)callbackTouchEnd:(BOOL)isTouchEnd
+{
     self.isSliding = !isTouchEnd;
-    if (_touchEndBlock) {
+    if (_touchEndBlock)
+    {
         _touchEndBlock(_value, isTouchEnd);
-    } else if ([self.delegate respondsToSelector:@selector(didSCSliderTouchEnd:value:isTouch:)]) {
+    } else if ([self.delegate respondsToSelector:@selector(didSCSliderTouchEnd:value:isTouch:)])
+    {
         [self.delegate didSCSliderTouchEnd:self value:_value isTouch:isTouchEnd];
     }
 }
@@ -268,7 +299,8 @@
  *
  *  @param touches touch的NSSet
  */
-- (void)updateTouchPoint:(NSSet*)touches {
+- (void)updateTouchPoint:(NSSet*)touches
+{
     CGPoint touchPoint = [[touches anyObject] locationInView:self];
     self.scaleNum = (_direction == SCSliderDirectionHorizonal ? touchPoint.x : touchPoint.y) / (_direction == SCSliderDirectionHorizonal ? self.frame.size.width : self.frame.size.height);
 }
@@ -278,8 +310,10 @@
  *
  *  @param minValue 最小值
  */
-- (void)setMinValue:(CGFloat)minValue {
-    if (_minValue != minValue) {
+- (void)setMinValue:(CGFloat)minValue
+{
+    if (_minValue != minValue)
+    {
         _minValue = minValue;
         _value = minValue;
     }
@@ -291,8 +325,10 @@
  *
  *  @param scaleNum 滑动的比值
  */
-- (void)setScaleNum:(CGFloat)scaleNum {
-    if (_scaleNum != scaleNum) {
+- (void)setScaleNum:(CGFloat)scaleNum
+{
+    if (_scaleNum != scaleNum)
+    {
         _scaleNum = scaleNum;
         
         self.value = _minValue + scaleNum * (_maxValue - _minValue);

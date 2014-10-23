@@ -19,7 +19,8 @@
  *
  *  @return 生成后的图片
  */
-+ (UIImage *)createImageWithColor:(UIColor *)color size:(CGSize)imageSize {
++ (UIImage *)createImageWithColor:(UIColor *)color size:(CGSize)imageSize
+{
     CGRect rect = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
     UIGraphicsBeginImageContext(rect.size);
     CGContextRef context = UIGraphicsGetCurrentContext();
@@ -39,7 +40,8 @@
  *  @param color         线的颜色
  *  @param parentLayer   线的父图层
  */
-+ (void)drawALineWithFrame:(CGRect)frame color:(UIColor *)color inLayer:(CALayer *)parentLayer {
++ (void)drawALineWithFrame:(CGRect)frame color:(UIColor *)color inLayer:(CALayer *)parentLayer
+{
     CALayer *layer = [CALayer layer];
     layer.frame = frame;
     layer.backgroundColor = color.CGColor;
@@ -52,15 +54,19 @@
  *
  *  @param image   需要保存的图片
  */
-+ (void)saveImageToPhotoAlbum:(UIImage *)image {
++ (void)saveImageToPhotoAlbum:(UIImage *)image
+{
     UIImageWriteToSavedPhotosAlbum(image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
 }
 
-+ (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
-    if (error != NULL) {
++ (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo
+{
+    if (error != NULL)
+    {
         UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"温馨提示" message:@"保存图片出错！" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
         [alertView show];
-    }else {
+    }else
+    {
         NSLog(@"保存图片成功");
     }
 }
