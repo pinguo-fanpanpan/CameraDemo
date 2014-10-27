@@ -42,6 +42,7 @@
 
 #define isPad_AllTargetMode  ([[UIDevice currentDevice].model rangeOfString:@"iPad"].location != NSNotFound )  //设备类型为任何类型都能生效
 
+#define ARRAY_SIZE(array)   sizeof(array)/sizeof(array[0])
 
 //iOS版本适配
 #if __IPHONE_6_0 //iOS6 and later
@@ -69,7 +70,6 @@
 #   define kTextLineBreakByTruncatingHead_SC     UILineBreakModeHeadTruncation
 #   define kTextLineBreakByTruncatingTail_SC     UILineBreakModeTailTruncation
 #   define kTextLineBreakByTruncatingMiddle_SC   UILineBreakModeMiddleTruncation
-
 
 #endif
 

@@ -7,6 +7,7 @@
 //
 
 #import "CaptrueSessionManager.h"
+#import "AVCaptureDevicePrivate.h"
 #import <ImageIO/ImageIO.h>
 
 @interface CaptrueSessionManager ()
@@ -16,6 +17,8 @@
 @end
 
 @implementation CaptrueSessionManager
+
+NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024 };
 
 //配置镜头拉升参数
 - (instancetype)init
@@ -377,6 +380,158 @@
     }
     
 }
+
+/**
+ *  改变曝光率
+ *
+ *  @param gain 增益
+ */
+- (void)changeExposureWithGain:(CGFloat)gain
+{
+    AVCaptureDevice *device = [_inputDevice device];
+    NSError *error = nil;
+    if ([device lockForConfiguration:&error])
+    {
+        device.manualExposureSupportEnabled = YES;
+        if ([device isExposureModeSupported:AVCaptureExposureModeCustom])
+        {
+            NSInteger   exposureDuration = exposureTimes[(NSInteger)(gain + 0.5)];
+            device.exposureDuration = AVCaptureExposureDurationMake(exposureDuration);
+            
+            device.exposureMode = AVCaptureExposureModeCustom;
+        }
+        [device unlockForConfiguration];
+    }
+    else
+    {
+        NSLog(@"%@", error);
+    }
+}
+
+/**
+ *  调节白平衡参数
+ *
+ *  @param value 白平衡参数设置
+ */
+- (void)changeWhiteBalanceWithValue:(CGFloat)value
+{
+    AVCaptureDevice *device = [_inputDevice device];
+    NSError *error = nil;
+    if ([device lockForConfiguration:&error])
+    {
+        if ([device isWhiteBalanceModeSupported:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance]) {
+            device.whiteBalanceMode = AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance;
+//            device.whiteBalanceMode 
+           device.whiteBalanceTemperature = value;
+        }
+        [device unlockForConfiguration];
+    }
+    else
+    {
+        NSLog(@"%@", error);
+    }
+}
+
+/**
+ *  配置ISO
+ *
+ *  @param value ISO参数
+ */
+- (void)changeISOWithValue:(CGFloat)value
+{
+    AVCaptureDevice *device = [_inputDevice device];
+//    CGFloat iso = device.ISO;
+//    CGFloat minISO = 0.0f;
+//    CGFloat maxISO = 0.0f;
+//
+//    if ([device respondsToSelector:@selector(activeFormat)])
+//    {
+//        if ([device.activeFormat respondsToSelector:@selector(minISO)])
+//        {
+//            minISO = device.activeFormat.minISO;
+//        }
+//        
+//        if ([device.activeFormat respondsToSelector:@selector(maxISO)])
+//        {
+//            maxISO = device.activeFormat.maxISO;
+//        }
+//        
+//        
+//        NSAssert(minISO != 0.0f, @"");
+//        NSAssert(maxISO != 0.0, @"");
+//    }
+    
+    NSError *error = nil;
+    if ([device lockForConfiguration:&error])
+    {
+        if ([device isExposureModeSupported:AVCaptureExposureModeCustom])
+        {
+           
+            device.exposureMode = AVCaptureExposureModeCustom;
+            [device setExposureModeCustomWithDuration:CMTimeMake(1, 30)
+                                                  ISO:value
+                                    completionHandler:^(CMTime syncTime) {
+                                        CMTimeShow(syncTime);
+                                    }];
+            
+            [device unlockForConfiguration];
+        }
+        
+    }
+    else
+    {
+        NSLog(@"%@", error);
+    }
+
+}
+
+/**
+ *  配置帧率
+ *
+ *  @param value 帧率参数
+ */
+- (void)changeFrameRateWithValue:(CGFloat)value
+{
+//    AVCaptureDevice *device = [_inputDevice device];
+//    NSError *error = nil;
+//    if ([device lockForConfiguration:&error])
+//    {
+//        
+//        [device unlockForConfiguration];
+//    }
+//    else
+//    {
+//        NSLog(@"%@", error);
+//    }
+    if (!_inputDevice)
+    {
+        return;
+    }
+    [_session beginConfiguration];
+     AVCaptureConnection *connection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
+    if (_session) {
+        
+        if ([connection respondsToSelector:@selector(isVideoMaxFrameDurationSupported)])
+        {
+            if ([connection isVideoMaxFrameDurationSupported]) {
+                if ([[connection inputPorts] count] > 0)
+                {
+                    [connection setVideoMaxFrameDuration:CMTimeMake(1,value)];
+                }
+            }
+        }
+        if ([connection respondsToSelector:@selector(isVideoMinFrameDurationSupported)]) {
+            if ([connection isVideoMinFrameDurationSupported]) {
+                if ([[connection inputPorts] count] > 0)
+                {
+                    [connection setVideoMinFrameDuration:CMTimeMake(1, 20)];
+                }
+            }
+        }
+    }
+    [_session commitConfiguration];
+}
+
 /**
  *  保存照片到相册
  *

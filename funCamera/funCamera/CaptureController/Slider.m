@@ -335,6 +335,13 @@
     }
 }
 
+- (void)setValue:(CGFloat)value minValue:(CGFloat)minValue maxValue:(CGFloat)maxValue
+{
+    self.minValue = minValue;
+    self.maxValue = value;
+    self.value = value;
+}
+
 /*
  // Only override drawRect: if you perform custom drawing.
  // An empty implementation adversely affects performance during animation.

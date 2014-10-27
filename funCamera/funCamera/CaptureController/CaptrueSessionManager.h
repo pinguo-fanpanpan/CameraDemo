@@ -50,10 +50,16 @@
 - (void)changeResolutionRatioWithIndex:(NSInteger)index;
 
 //曝光率
-- (void)switchExposureModeWithIndex:(NSInteger)index;
+- (void)changeExposureWithGain:(CGFloat)gain;
 
 //白平衡
-- (void)switchWhiteBalanceWithIndex:(NSInteger)index;
+- (void)changeWhiteBalanceWithValue:(CGFloat)value;
+
+//IOS
+- (void)changeISOWithValue:(CGFloat)value;
+
+//帧率
+- (void)changeFrameRateWithValue:(CGFloat)value;
 
 //拍照，将图片保存到相册
 - (void)saveImageToAlbum:(UIImage *)stillImage;

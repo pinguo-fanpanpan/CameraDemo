@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
+
 typedef void(^DidChangeValueBlock)(CGFloat value);
 typedef void(^TouchEndBlock)(CGFloat value, BOOL isTouchEnd);
 @protocol SCSliderDelegate;
@@ -66,8 +67,16 @@ typedef enum {
          circleRadius:(CGFloat)circleRadius
      isFullFillCircle:(BOOL)isFullFillCircle;
 
-
-
+/**
+ *  设置slider的值
+ *
+ *  @param value    当前值
+ *  @param minValue 最小值
+ *  @param maxValue 最大值
+ */
+- (void)setValue:(CGFloat)value
+        minValue:(CGFloat)minValue
+        maxValue:(CGFloat)maxValue;
 
 /**
  *  value改变后的回调

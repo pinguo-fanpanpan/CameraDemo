@@ -10,6 +10,7 @@
 #import "Common.h"
 #import "Defines.h"
 #import "Slider.h"
+#import "TGAlbum.h"
 
 //height
 #define CAMERA_TOPVIEW_HEIGHT 44
@@ -17,7 +18,7 @@
 
 #define  BOTTOM_COLOR   [UIColor colorWithRed:51/255.0f green:51/255.0f blue:51/255.0f alpha:1.f] //bottomView的背景色
 
-
+//NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024 };
 //对焦
 #define ADJUSTING_FOCUS @"adjustingfocus"
 
@@ -50,6 +51,9 @@
 
 - (void)buttonPressed:(UIButton *)sender;
 - (void)controlPressed:(UIButton *)sender;
+
+//通过slider修改相机参数
+- (void)configureCaptureDevice:(Slider *)slider;
 
 @end
 
@@ -226,6 +230,37 @@
     {
         Slider *slider = [[Slider alloc] initWithFrame:CGRectMake(90, 70 + 40 * i, 135, 25) direction:SCSliderDirectionHorizonal] ;
         [slider fillLineColor:[UIColor whiteColor] slidedLineColor:rgba_Color(120, 174, 0, 2.f) circleColor:[UIColor whiteColor] shouldShowHalf:YES lineWidth:1.f circleRadius:10.f isFullFillCircle:NO];
+        if (i == 0) {
+            slider.minValue = 1.f;
+            slider.maxValue = 16.f;
+            slider.value = 3.f;
+            [slider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+                [_sessionManager changeExposureWithGain:value];
+            }];
+        }else if (i == 1) {
+            slider.minValue = 0.f;
+            slider.maxValue = 1.f;
+            slider.value = .5f;
+            [slider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+                [_sessionManager changeWhiteBalanceWithValue:value];
+            }];
+        }else if (i == 2) {
+            slider.minValue = 1.0f;
+            slider.maxValue = 20.f;
+            slider.value = 5.f;
+            [slider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+                [_sessionManager changeFrameRateWithValue:value];
+            }];
+        }else if (i == 3) {
+            slider.minValue = 30.f;
+            slider.maxValue = 600.f;
+            slider.value = 50.f;
+            [slider buildDidChangeValueBlock:^(CGFloat value) {
+                [_sessionManager changeISOWithValue:value];
+            }];
+        }
+       
+//        [slider addTarget:self action:@selector(configureCaptureDevice:) forControlEvents:UIControlEventValueChanged];
         [_settingVeiw addSubview:slider];
     }
 }
@@ -243,6 +278,10 @@
     }else if (index == 3)
     {
         [_sessionManager saveImageToAlbum:nil];
+    }else if (index == 4)
+    {
+        UIImagePickerController *pc = [TGAlbum imagePickerControllerWithDelegate:self];
+        [self presentViewController:pc animated:YES completion:nil];
     }else if (index == 5)
     {
         sender.selected = !sender.selected;
@@ -262,6 +301,10 @@
     [_sessionManager changeResolutionRatioWithIndex:selIndex];
 }
 
+- (void)configureCaptureDevice:(Slider *)slider
+{
+    NSLog(@"slider.tag = %d",slider.tag);
+}
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
