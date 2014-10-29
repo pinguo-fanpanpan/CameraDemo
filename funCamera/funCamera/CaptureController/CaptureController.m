@@ -20,6 +20,8 @@
 
 //NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024 };
 //对焦
+
+
 #define ADJUSTING_FOCUS @"adjustingfocus"
 
 @interface CaptureController ()
@@ -33,6 +35,13 @@
 @property (nonatomic,strong) UIView *bottomContainView;
 @property (nonatomic,strong) NSMutableSet *cameraBtnSet;
 @property (nonatomic,strong) UIView *settingVeiw;
+
+@property (nonatomic,strong) Slider *epSlider;
+@property (nonatomic,strong) Slider *wbSlider;
+@property (nonatomic,strong) Slider *frSlider;
+@property (nonatomic,strong) Slider *isoSlider;
+
+@property (nonatomic,strong)NSArray *sliderArray;
 
 //对焦图片
 @property (nonatomic,strong) UIImageView * focusImageView;
@@ -66,6 +75,7 @@
     {
         currTouchPoint = CGPointZero;
         _cameraBtnSet = [[NSMutableSet alloc] init];
+        _sliderArray = @[@"epSlider",@"wbSlider",@"frSlider",@"isoSlider"];
     }
     return self;
 }
@@ -79,6 +89,12 @@
     self.sessionManager = nil;
     self.focusImageView = nil;
     self.slider = nil;
+    
+    self.epSlider = nil;
+    self.wbSlider = nil;
+    self.frSlider = nil;
+    self.isoSlider = nil;
+    self.sliderArray = nil;
 }
 
 - (void)viewDidLoad
@@ -86,7 +102,6 @@
     [super viewDidLoad];
     
     self.view.backgroundColor = BOTTOM_COLOR;
-//    [self.view setTranslatesAutoresizingMaskIntoConstraints:NO];
     
     //隐藏状态栏
     [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationFade];
@@ -111,9 +126,23 @@
     [self addFocusImageView];
     [self addSettingVeiw];
     
+    //配置相机参数
+    [self configureExposure];
+    [self configureWhiteBalance];
+    [self configureFrameRate];
+    [self configureISO];
+    
+    //启动相机session
     [_sessionManager.session startRunning];
 }
 
+
+
+#pragma mark ----   添加拍照界面视图
+
+/**
+ *  添加顶部视图
+ */
 - (void)addTopContainView
 {
     UIView *topView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, DEVICE_SIZE.width, CAMERA_TOPVIEW_HEIGHT)];
@@ -121,7 +150,7 @@
     [self.view addSubview:topView];
     
     UIButton *switchBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    switchBtn.frame = CGRectMake(220, 12, 24, 20);
+    switchBtn.frame = CGRectMake(40, 10, 28, 25);
     [switchBtn setBackgroundImage:[UIImage imageNamed:@"switch_camera@2x.png"] forState:UIControlStateNormal];
     [switchBtn setBackgroundImage:[UIImage imageNamed:@"switch_camera_h@2x.png"] forState:UIControlStateSelected];
     [switchBtn addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
@@ -129,7 +158,7 @@
     [topView addSubview:switchBtn];
     
     UIButton *flashBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    flashBtn.frame = CGRectMake(CGRectGetMaxX(switchBtn.frame) + 20, 10, 24, 24);
+    flashBtn.frame = CGRectMake(DEVICE_SIZE.width - 40 - 30, 8, 28, 28);
     [flashBtn setBackgroundImage:[UIImage imageNamed:@"flashing_off@2x.png"] forState:UIControlStateNormal];
     [flashBtn addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
     flashBtn.tag = 22;
@@ -138,6 +167,9 @@
     self.topContainView = topView;
 }
 
+/**
+ *  添加底部视图
+ */
 - (void)addBottomContainView
 {
     UIView *bottomView = [[UIView alloc] initWithFrame:CGRectMake(0, DEVICE_SIZE.height - CAMERA_BOTTOMVIEW_HEIGHT, DEVICE_SIZE.width, CAMERA_BOTTOMVIEW_HEIGHT)];
@@ -171,6 +203,9 @@
     self.bottomContainView = bottomView;
 }
 
+/**
+ *  添加拉升镜头的slider
+ */
 - (void)addSliderView
 {
     Slider *slider = [[Slider alloc] initWithFrame:CGRectMake(280, 146, 40, 200) direction:SCSliderDirectionVertical];
@@ -186,6 +221,9 @@
     self.slider = slider;
 }
 
+/**
+ *  添加聚焦视图
+ */
 - (void)addFocusImageView
 {
     UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 44, 80, 80)];
@@ -196,6 +234,9 @@
     self.focusImageView = imageView;
 }
 
+/**
+ *  添加设置页面
+ */
 - (void)addSettingVeiw
 {
     UIView *setView = [[UIView alloc] initWithFrame:CGRectMake((DEVICE_SIZE.width - 240)/2 - 10, CGRectGetMinY(_bottomContainView.frame) - 250, 240, 240)];
@@ -225,87 +266,136 @@
     
     self.segControl = segMentedControl;
     
-    //曝光率和白平衡
+    //相机参数配置的slider
     for (int i = 0; i < 4; i ++)
     {
         Slider *slider = [[Slider alloc] initWithFrame:CGRectMake(90, 70 + 40 * i, 135, 25) direction:SCSliderDirectionHorizonal] ;
         [slider fillLineColor:[UIColor whiteColor] slidedLineColor:rgba_Color(120, 174, 0, 2.f) circleColor:[UIColor whiteColor] shouldShowHalf:YES lineWidth:1.f circleRadius:10.f isFullFillCircle:NO];
-        if (i == 0) {
-            slider.minValue = 1.f;
-            slider.maxValue = 16.f;
-            slider.value = 3.f;
-            [slider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
-                [_sessionManager changeExposureWithGain:value];
-            }];
-        }else if (i == 1) {
-            slider.minValue = 0.f;
-            slider.maxValue = 1.f;
-            slider.value = .5f;
-            [slider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
-                [_sessionManager changeWhiteBalanceWithValue:value];
-            }];
-        }else if (i == 2) {
-            slider.minValue = 1.0f;
-            slider.maxValue = 20.f;
-            slider.value = 5.f;
-            [slider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
-                [_sessionManager changeFrameRateWithValue:value];
-            }];
-        }else if (i == 3) {
-            slider.minValue = 30.f;
-            slider.maxValue = 600.f;
-            slider.value = 50.f;
-            [slider buildDidChangeValueBlock:^(CGFloat value) {
-                [_sessionManager changeISOWithValue:value];
-            }];
-        }
-       
-//        [slider addTarget:self action:@selector(configureCaptureDevice:) forControlEvents:UIControlEventValueChanged];
         [_settingVeiw addSubview:slider];
+        [self setValue:slider forKey:_sliderArray[i]];
     }
 }
 
+
+#pragma mark    ----   相机参数配置
+
+/**
+ *  曝光配置：改变duration
+ */
+- (void)configureExposure
+{
+    _epSlider.minValue = 2.f;
+    _epSlider.maxValue = 16.f;
+    [_epSlider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+        if (isTouchEnd)
+        {
+            [_sessionManager changeExposureWithDuration:value];
+        }
+     }];
+}
+
+/**
+ *  白平衡配置
+ */
+- (void)configureWhiteBalance
+{
+    _wbSlider.minValue = .1f;
+    _wbSlider.maxValue = .4f;
+    [_wbSlider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+        if (isTouchEnd)
+        {
+            [_sessionManager changeWhiteBalanceWithValue:value];
+        }
+    }];
+}
+
+/**
+ *  帧率配置
+ */
+- (void)configureFrameRate
+{
+    _frSlider.minValue = 2.f;
+    _frSlider.maxValue = 30.f;
+    [_frSlider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+        if (isTouchEnd)
+        {
+            [_sessionManager changeFrameRateWithValue:value];
+        }
+    }];
+}
+
+/**
+ *  ISO配置
+ */
+- (void)configureISO
+{
+    _isoSlider.minValue = 30.f;
+    _isoSlider.maxValue = 600.f;
+    [_isoSlider buildTouchEndBlock:^(CGFloat value, BOOL isTouchEnd) {
+        if (isTouchEnd)
+        {
+            [_sessionManager changeISOWithValue:value];
+        }
+    }];
+}
+
+
+#pragma mark ----    按钮触发事件
 - (void)buttonPressed:(UIButton *)sender
 {
     NSInteger index = sender.tag - 20;
-    if (index == 1)
+    switch (index)
     {
-        [_sessionManager swithCamera:sender.selected];
-        sender.selected = !sender.selected;
-    }else if (index == 2)
-    {
-        [_sessionManager switchFlashMode:sender];
-    }else if (index == 3)
-    {
-        [_sessionManager saveImageToAlbum:nil];
-    }else if (index == 4)
-    {
-        UIImagePickerController *pc = [TGAlbum imagePickerControllerWithDelegate:self];
-        [self presentViewController:pc animated:YES completion:nil];
-    }else if (index == 5)
-    {
-        sender.selected = !sender.selected;
-        if (sender.selected)
+        case 1:
+            [_sessionManager swithCamera:sender.selected];
+            sender.selected = !sender.selected;
+            break;
+        case 2:
+            [_sessionManager switchFlashMode:sender];
+            break;
+        case 3:
+           [_sessionManager saveImageToAlbum:nil];
+            break;
+        case 4:
         {
-            _settingVeiw.alpha = .5f;
-        }else
-        {
-            _settingVeiw.alpha = .0f;
+            UIImagePickerController *pc = [TGAlbum imagePickerControllerWithDelegate:self];
+            [self presentViewController:pc animated:YES completion:nil];
         }
+            break;
+        case 5:
+        {
+            sender.selected = !sender.selected;
+            if (sender.selected)
+            {
+                _settingVeiw.alpha = .5f;
+            }else
+            {
+                _settingVeiw.alpha = .0f;
+            }
+        }
+            break;
+        default:
+            NSLog(@"nothing need to be operated");
     }
 }
 
+/**
+ *  相机分辨率控制
+ *
+ *  @param sender 分段控件segment
+ */
 - (void)controlPressed:(UIButton *)sender
 {
     NSInteger selIndex = _segControl.selectedSegmentIndex;
     [_sessionManager changeResolutionRatioWithIndex:selIndex];
 }
 
-- (void)configureCaptureDevice:(Slider *)slider
-{
-    NSLog(@"slider.tag = %d",slider.tag);
-}
-
+/**
+ *  点击预览框，相机聚焦
+ *
+ *  @param touches 触摸手势
+ *  @param event   触摸事件
+ */
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
     UITouch *touch = [touches anyObject];
@@ -320,16 +410,22 @@
     //相机聚焦
     [_sessionManager focusInPoint:currTouchPoint];
     
-    if (_settingVeiw.alpha == .0f) {
+    if (_settingVeiw.alpha == .0f)
+    {
         [_focusImageView setCenter:currTouchPoint];
         _focusImageView.alpha = 1.f;
-        [UIView animateWithDuration:1.f animations:^
-         {
+        [UIView animateWithDuration:1.f animations:^ {
              _focusImageView.alpha = 0;
          }];
     }
 }
 
+
+/**
+ *  图片保存成功后，改变相册选择按钮的图片为最新图片
+ *
+ *  @param image 置换的图片
+ */
 - (void)setButtonImageWithImage:(UIImage *)image
 {
     UIView *subView = [_bottomContainView viewWithTag:24];

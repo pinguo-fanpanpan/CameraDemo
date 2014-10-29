@@ -144,6 +144,7 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     }
 }
 
+
 /**
  *  添加输出设备
  */
@@ -158,6 +159,7 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
 }
 
 
+#pragma mark
 /**
  *  前后摄像头切换
  *
@@ -175,6 +177,8 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     [_session commitConfiguration];
 }
 
+
+#pragma mark    ----    镜头拉升
 /**
  *  镜头拉升
  *
@@ -191,12 +195,14 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
         _scaleNum = MAX_PINCH_SCALE_NUM;
     }
     AVCaptureConnection *connection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-    if (!connection) {
+    if (!connection)
+    {
         NSLog(@"take photo faild");
         return;
     }
     CGFloat maxScale = connection.videoMaxScaleAndCropFactor;
-    if (_scaleNum > maxScale) {
+    if (_scaleNum > maxScale)
+    {
         _scaleNum = maxScale;
     }
     [CATransaction begin];
@@ -207,6 +213,8 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     _preScaleNum = scaleNum;
 }
 
+
+#pragma mark    ----    闪光灯切换
 /**
  *  闪光灯切换
  *  （1.off  2.auto  3.on）
@@ -252,10 +260,13 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     [device unlockForConfiguration];
 }
 
+
+#pragma mark    ----    相机聚焦
+
 /**
  *  相机聚焦功能
  *
- *  @param touchPoint <#touchPoint description#>
+ *  @param touchPoint 聚焦位置
  */
 - (void)focusInPoint:(CGPoint)touchPoint
 {
@@ -270,18 +281,23 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
  *
  *  @return 相对位置的point
  */
-- (CGPoint)convertToPointOfInterestFromViewCoordinates:(CGPoint)viewCoordinates {
+- (CGPoint)convertToPointOfInterestFromViewCoordinates:(CGPoint)viewCoordinates
+{
     CGPoint pointOfInterest = CGPointMake(.5f, .5f);
     CGSize frameSize = _previewLayer.bounds.size;
     
     AVCaptureVideoPreviewLayer *videoPreviewLayer = self.previewLayer;
     
-    if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResize]) {
+    if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResize])
+    {
         pointOfInterest = CGPointMake(viewCoordinates.y / frameSize.height, 1.f - (viewCoordinates.x / frameSize.width));
-    } else {
+    } else
+    {
         CGRect cleanAperture;
-        for(AVCaptureInputPort *port in [[self.session.inputs lastObject]ports]) {
-            if([port mediaType] == AVMediaTypeVideo) {
+        for(AVCaptureInputPort *port in [[self.session.inputs lastObject]ports])
+        {
+            if([port mediaType] == AVMediaTypeVideo)
+            {
                 cleanAperture = CMVideoFormatDescriptionGetCleanAperture([port formatDescription], YES);
                 CGSize apertureSize = cleanAperture.size;
                 CGPoint point = viewCoordinates;
@@ -291,32 +307,40 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
                 CGFloat xc = .5f;
                 CGFloat yc = .5f;
                 
-                if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResizeAspect]) {
-                    if(viewRatio > apertureRatio) {
+                if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResizeAspect])
+                {
+                    if(viewRatio > apertureRatio)
+                    {
                         CGFloat y2 = frameSize.height;
                         CGFloat x2 = frameSize.height * apertureRatio;
                         CGFloat x1 = frameSize.width;
                         CGFloat blackBar = (x1 - x2) / 2;
-                        if(point.x >= blackBar && point.x <= blackBar + x2) {
+                        if(point.x >= blackBar && point.x <= blackBar + x2)
+                        {
                             xc = point.y / y2;
                             yc = 1.f - ((point.x - blackBar) / x2);
                         }
-                    } else {
+                    } else
+                    {
                         CGFloat y2 = frameSize.width / apertureRatio;
                         CGFloat y1 = frameSize.height;
                         CGFloat x2 = frameSize.width;
                         CGFloat blackBar = (y1 - y2) / 2;
-                        if(point.y >= blackBar && point.y <= blackBar + y2) {
+                        if(point.y >= blackBar && point.y <= blackBar + y2)
+                        {
                             xc = ((point.y - blackBar) / y2);
                             yc = 1.f - (point.x / x2);
                         }
                     }
-                } else if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResizeAspectFill]) {
-                    if(viewRatio > apertureRatio) {
+                } else if([[videoPreviewLayer videoGravity]isEqualToString:AVLayerVideoGravityResizeAspectFill])
+                {
+                    if(viewRatio > apertureRatio)
+                    {
                         CGFloat y2 = apertureSize.width * (frameSize.width / apertureSize.height);
                         xc = (point.y + ((y2 - frameSize.height) / 2.f)) / y2;
                         yc = (frameSize.width - point.x) / frameSize.width;
-                    } else {
+                    } else
+                    {
                         CGFloat x2 = apertureSize.height * (frameSize.height / apertureSize.width);
                         yc = 1.f - ((point.x + ((x2 - frameSize.width) / 2)) / x2);
                         xc = point.y / frameSize.height;
@@ -333,33 +357,33 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     return pointOfInterest;
 }
 
-- (void)focusWithMode:(AVCaptureFocusMode)focusMode exposeWithMode:(AVCaptureExposureMode)exposureMode atDevicePoint:(CGPoint)point monitorSubjectAreaChange:(BOOL)monitorSubjectAreaChange {
-    
-//    dispatch_async(_sessionQueue, ^{
-        AVCaptureDevice *device = [_inputDevice device];
-        NSError *error = nil;
-        if ([device lockForConfiguration:&error])
+//设置聚焦
+- (void)focusWithMode:(AVCaptureFocusMode)focusMode exposeWithMode:(AVCaptureExposureMode)exposureMode atDevicePoint:(CGPoint)point monitorSubjectAreaChange:(BOOL)monitorSubjectAreaChange
+{
+    AVCaptureDevice *device = [_inputDevice device];
+    NSError *error = nil;
+    if ([device lockForConfiguration:&error])
+    {
+        if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:focusMode])
         {
-            if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:focusMode])
-            {
-                [device setFocusMode:focusMode];
-                [device setFocusPointOfInterest:point];
-            }
-            if ([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:exposureMode])
-            {
-                [device setExposureMode:exposureMode];
-                [device setExposurePointOfInterest:point];
-            }
-            [device setSubjectAreaChangeMonitoringEnabled:monitorSubjectAreaChange];
-            [device unlockForConfiguration];
+            [device setFocusMode:focusMode];
+            [device setFocusPointOfInterest:point];
         }
-        else
+        if ([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:exposureMode])
         {
-            NSLog(@"%@", error);
+            [device setExposureMode:exposureMode];
+            [device setExposurePointOfInterest:point];
         }
-//    });
+        [device setSubjectAreaChangeMonitoringEnabled:monitorSubjectAreaChange];
+        [device unlockForConfiguration];
+    }
+    else
+    {
+        NSLog(@"%@", error);
+    }
 }
 
+#pragma mark    ----    改变相机分辨率
 /**
  *  改变屏幕分辨率
  *
@@ -370,10 +394,10 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     CGRect rect = _previewLayer.bounds;
     if (index == 0)
     {
-        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, 320);
+        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, rect.size.width);
     }else if (index == 1)
     {
-        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, 340);
+        _previewLayer.frame = CGRectMake(0, 44, rect.size.width, rect.size.width * 16 / 9);
     }else
     {
         _previewLayer.frame = CGRectMake(0, 44, rect.size.width, 414);
@@ -381,24 +405,37 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     
 }
 
+
+#pragma mark    ----    相机参数配置
 /**
  *  改变曝光率
  *
  *  @param gain 增益
  */
-- (void)changeExposureWithGain:(CGFloat)gain
+- (void)changeExposureWithDuration:(CGFloat)duration
 {
     AVCaptureDevice *device = [_inputDevice device];
     NSError *error = nil;
     if ([device lockForConfiguration:&error])
     {
-        device.manualExposureSupportEnabled = YES;
-        if ([device isExposureModeSupported:AVCaptureExposureModeCustom])
+        if ([device respondsToSelector:@selector(setExposureModeCustomWithDuration:ISO:completionHandler:)])
         {
-            NSInteger   exposureDuration = exposureTimes[(NSInteger)(gain + 0.5)];
-            device.exposureDuration = AVCaptureExposureDurationMake(exposureDuration);
-            
             device.exposureMode = AVCaptureExposureModeCustom;
+            [device setExposureModeCustomWithDuration:CMTimeMake(1, duration)
+                                                  ISO:50.f
+                                    completionHandler:^(CMTime syncTime) {
+                                        CMTimeShow(syncTime);
+                                    }];
+        }else
+        {
+            device.manualExposureSupportEnabled = YES;
+            if ([device isExposureModeSupported:AVCaptureExposureModeCustom])
+            {
+                NSInteger   exposureDuration = exposureTimes[(NSInteger)(duration + 0.5)];
+                device.exposureDuration = AVCaptureExposureDurationMake(exposureDuration);
+                
+                device.exposureMode = AVCaptureExposureModeCustom;
+            }
         }
         [device unlockForConfiguration];
     }
@@ -419,10 +456,21 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     NSError *error = nil;
     if ([device lockForConfiguration:&error])
     {
-        if ([device isWhiteBalanceModeSupported:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance]) {
-            device.whiteBalanceMode = AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance;
-//            device.whiteBalanceMode 
-           device.whiteBalanceTemperature = value;
+        if ([device respondsToSelector:@selector(setWhiteBalanceModeLockedWithDeviceWhiteBalanceGains:completionHandler:)])
+        {
+            device.whiteBalanceMode = AVCaptureWhiteBalanceModeLocked;
+            AVCaptureWhiteBalanceGains gain = {value*10,3,4};
+            [device setWhiteBalanceModeLockedWithDeviceWhiteBalanceGains:gain completionHandler:^(CMTime syncTime) {
+                CMTimeShow(syncTime);
+            }];
+        }
+        else
+        {
+            if ([device isWhiteBalanceModeSupported:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance])
+            {
+                device.whiteBalanceMode = AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance;
+                device.whiteBalanceTemperature = value;
+            }
         }
         [device unlockForConfiguration];
     }
@@ -440,43 +488,22 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
 - (void)changeISOWithValue:(CGFloat)value
 {
     AVCaptureDevice *device = [_inputDevice device];
-//    CGFloat iso = device.ISO;
-//    CGFloat minISO = 0.0f;
-//    CGFloat maxISO = 0.0f;
-//
-//    if ([device respondsToSelector:@selector(activeFormat)])
-//    {
-//        if ([device.activeFormat respondsToSelector:@selector(minISO)])
-//        {
-//            minISO = device.activeFormat.minISO;
-//        }
-//        
-//        if ([device.activeFormat respondsToSelector:@selector(maxISO)])
-//        {
-//            maxISO = device.activeFormat.maxISO;
-//        }
-//        
-//        
-//        NSAssert(minISO != 0.0f, @"");
-//        NSAssert(maxISO != 0.0, @"");
-//    }
-    
     NSError *error = nil;
     if ([device lockForConfiguration:&error])
     {
         if ([device isExposureModeSupported:AVCaptureExposureModeCustom])
         {
-           
-            device.exposureMode = AVCaptureExposureModeCustom;
-            [device setExposureModeCustomWithDuration:CMTimeMake(1, 30)
-                                                  ISO:value
-                                    completionHandler:^(CMTime syncTime) {
-                                        CMTimeShow(syncTime);
-                                    }];
-            
+            if ([device respondsToSelector:@selector(setExposureModeCustomWithDuration:ISO:completionHandler:)])
+            {
+                device.exposureMode = AVCaptureExposureModeCustom;
+                [device setExposureModeCustomWithDuration:CMTimeMake(1, 30)
+                                                      ISO:value
+                                        completionHandler:^(CMTime syncTime) {
+                                            CMTimeShow(syncTime);
+                                        }];
+            }
             [device unlockForConfiguration];
         }
-        
     }
     else
     {
@@ -485,6 +512,7 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
 
 }
 
+
 /**
  *  配置帧率
  *
@@ -492,36 +520,47 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
  */
 - (void)changeFrameRateWithValue:(CGFloat)value
 {
+//    
+//    if (!_inputDevice)
+//    {
+//        return;
+//    }
 //    AVCaptureDevice *device = [_inputDevice device];
 //    NSError *error = nil;
 //    if ([device lockForConfiguration:&error])
 //    {
-//        
-//        [device unlockForConfiguration];
-//    }
+//        if ([device isExposureModeSupported:AVCaptureExposureModeCustom]) {
+//            device.exposureMode = AVCaptureExposureModeCustom;
+//            device.activeVideoMinFrameDuration = CMTimeMake(1, 2);
+//            device.activeVideoMaxFrameDuration = CMTimeMake(1, value);
+//            NSArray *array = device.activeFormat.videoSupportedFrameRateRanges;
+//            [device unlockForConfiguration];
+//        }
+//     }
 //    else
 //    {
 //        NSLog(@"%@", error);
 //    }
-    if (!_inputDevice)
-    {
-        return;
-    }
+//
     [_session beginConfiguration];
-     AVCaptureConnection *connection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-    if (_session) {
-        
+    
+    AVCaptureConnection *connection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
+    if (_session)
+    {
         if ([connection respondsToSelector:@selector(isVideoMaxFrameDurationSupported)])
         {
-            if ([connection isVideoMaxFrameDurationSupported]) {
+            if ([connection isVideoMaxFrameDurationSupported])
+            {
                 if ([[connection inputPorts] count] > 0)
                 {
                     [connection setVideoMaxFrameDuration:CMTimeMake(1,value)];
                 }
             }
         }
-        if ([connection respondsToSelector:@selector(isVideoMinFrameDurationSupported)]) {
-            if ([connection isVideoMinFrameDurationSupported]) {
+        if ([connection respondsToSelector:@selector(isVideoMinFrameDurationSupported)])
+        {
+            if ([connection isVideoMinFrameDurationSupported])
+            {
                 if ([[connection inputPorts] count] > 0)
                 {
                     [connection setVideoMinFrameDuration:CMTimeMake(1, 20)];
@@ -532,6 +571,8 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
     [_session commitConfiguration];
 }
 
+
+#pragma mark    ----    拍照，保存图片
 /**
  *  保存照片到相册
  *
@@ -545,8 +586,7 @@ NSInteger exposureTimes[] = { 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128,
         NSLog(@"take photo faild");
         return;
     }
-    [_stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error)
-    {
+    [_stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
         if (imageDataSampleBuffer == NULL)
         {
             return;

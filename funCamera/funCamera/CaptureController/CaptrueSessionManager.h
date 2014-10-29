@@ -50,7 +50,7 @@
 - (void)changeResolutionRatioWithIndex:(NSInteger)index;
 
 //曝光率
-- (void)changeExposureWithGain:(CGFloat)gain;
+- (void)changeExposureWithDuration:(CGFloat)duration;
 
 //白平衡
 - (void)changeWhiteBalanceWithValue:(CGFloat)value;
